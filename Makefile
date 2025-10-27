@@ -60,8 +60,9 @@ lint-config: golangci-lint ## Verify golangci-lint linter configuration
 run: fmt vet ## Run a controller from your host.
 	go run ./cmd/main.go
 
-test:
-	go test sigs.k8s.io/dra-driver-topology/pkg/controller/dratopology
+.PHONY: test
+test: fmt vet ## Run tests.
+	go test $$(go list ./... | grep -v /e2e) -coverprofile cover.out
 
 # go-install-tool will 'go install' any package with custom target and name of binary, if it doesn't exist
 # $1 - target path with name of binary

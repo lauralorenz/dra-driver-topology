@@ -23,8 +23,8 @@ import (
 
 	"sigs.k8s.io/dra-driver-topology/pkg/controller/dratopology"
 
-	"k8s.io/client-go/tools/clientcmd"
 	"github.com/spf13/cobra"
+	"k8s.io/client-go/tools/clientcmd"
 	cliflag "k8s.io/component-base/cli/flag"
 	"k8s.io/component-base/cli/globalflag"
 	"k8s.io/component-base/logs"
