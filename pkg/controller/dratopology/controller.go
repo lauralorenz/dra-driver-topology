@@ -19,6 +19,9 @@ package dratopology
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"k8s.io/apimachinery/pkg/util/runtime"
@@ -50,12 +53,19 @@ func NewController(logger klog.Logger, kubeClient clientset.Interface) (*Control
 }
 
 // Run starts the dratopology controller.
-func (c *Controller) Run(ctx context.Context, workers int) {
-	defer runtime.HandleCrash()
-	defer c.queue.ShutDown()
+func (c *Controller) Run(parent context.Context, workers int) {
+	ctx, cancel := context.WithCancel(parent)
+	shutdown := make(chan os.Signal, 1)
+	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
+
+	go func(ctx context.Context, c *Controller) {
+		<-shutdown
+		c.logger.Info("Shutting down gracefully...")
+		c.ShutDown(ctx)
+		cancel()
+	}(ctx, c)
 
 	c.logger.Info("Starting dratopology controller")
-	defer c.logger.Info("Shutting down dratopology controller")
 
 	for i := 0; i < workers; i++ {
 		go wait.UntilWithContext(ctx, c.runWorker, time.Second)
@@ -94,4 +104,10 @@ func (c *Controller) syncHandler(ctx context.Context, key string) error {
 	// In a real controller, this is where you would fetch the object
 	// identified by 'key' and reconcile its state.
 	return nil
+}
+
+func (c *Controller) ShutDown(ctx context.Context) {
+	c.logger.Info("Shutting down dratopology controller")
+	runtime.HandleCrash()
+	c.queue.ShutDown()
 }
