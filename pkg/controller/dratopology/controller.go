@@ -26,28 +26,36 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
+	v1informers "k8s.io/client-go/informers/core/v1"
 	clientset "k8s.io/client-go/kubernetes"
+	v1listers "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
 )
 
 // Controller is the dratopology controller.
 type Controller struct {
-	kubeClient clientset.Interface
-	queue      workqueue.TypedRateLimitingInterface[string]
-	logger     klog.Logger
+	kubeClient   clientset.Interface
+	nodeInformer v1informers.NodeInformer
+	nodeLister   v1listers.NodeLister
+	queue        workqueue.TypedRateLimitingInterface[string]
+	logger       klog.Logger
 }
 
 // NewController creates a new dratopology controller.
-func NewController(logger klog.Logger, kubeClient clientset.Interface) (*Controller, error) {
+func NewController(logger klog.Logger, kubeClient clientset.Interface, nodeInformer v1informers.NodeInformer) (*Controller, error) {
 	c := &Controller{
 		kubeClient: kubeClient,
 		queue: workqueue.NewTypedRateLimitingQueueWithConfig(
 			workqueue.DefaultTypedControllerRateLimiter[string](),
 			workqueue.TypedRateLimitingQueueConfig[string]{Name: "dratopology"},
 		),
-		logger: logger,
+		nodeInformer: nodeInformer,
+		nodeLister:   nodeInformer.Lister(),
+		logger:       logger,
 	}
+
+	c.SetupNodeInformer(nodeInformer)
 
 	return c, nil
 }
@@ -103,6 +111,7 @@ func (c *Controller) syncHandler(ctx context.Context, key string) error {
 	c.logger.V(4).Info("Processing key", "key", key)
 	// In a real controller, this is where you would fetch the object
 	// identified by 'key' and reconcile its state.
+	c.syncNode(ctx, key)
 	return nil
 }
 
