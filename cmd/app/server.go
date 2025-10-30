@@ -24,6 +24,7 @@ import (
 	"sigs.k8s.io/dra-driver-topology/pkg/controller/dratopology"
 
 	"github.com/spf13/cobra"
+	"k8s.io/client-go/informers"
 	"k8s.io/client-go/tools/clientcmd"
 	cliflag "k8s.io/component-base/cli/flag"
 	"k8s.io/component-base/cli/globalflag"
@@ -32,6 +33,7 @@ import (
 	"k8s.io/component-base/term"
 	"k8s.io/controller-manager/pkg/clientbuilder"
 	"k8s.io/klog/v2"
+	"k8s.io/kubernetes/pkg/controller"
 )
 
 const (
@@ -136,9 +138,12 @@ func Run(ctx context.Context, opts *Options) error {
 		},
 		ResyncPeriod: ResyncPeriod,
 	}
+	kubeClient := controllerContext.ClientBuilder.ClientOrDie(dratopologyControllerName)
+	informerFactory := informers.NewSharedInformerFactory(kubeClient, controller.NoResyncPeriodFunc())
+	nodeInformer := informerFactory.Core().V1().Nodes()
 
 	// Construct controller
-	controller, err := dratopology.NewController(logger, controllerContext.ClientBuilder.ClientOrDie(dratopologyControllerName))
+	controller, err := dratopology.NewController(logger, kubeClient, nodeInformer)
 	if err != nil {
 		return fmt.Errorf("could not construct controller: %w", err)
 	}

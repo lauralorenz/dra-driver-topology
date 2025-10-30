@@ -21,8 +21,10 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/klog/v2"
+	"k8s.io/kubernetes/pkg/controller"
 	ktesting "k8s.io/kubernetes/test/utils/ktesting"
 )
 
@@ -32,13 +34,15 @@ func TestController(t *testing.T) {
 	logger := klog.FromContext(tCtx)
 
 	fakeKubeClient := fake.NewClientset()
+	informerFactory := informers.NewSharedInformerFactory(fakeKubeClient, controller.NoResyncPeriodFunc())
+	nodeInformer := informerFactory.Core().V1().Nodes()
 
 	// Create the controller
-	c, err := NewController(logger, fakeKubeClient)
+	c, err := NewController(logger, fakeKubeClient, nodeInformer)
 	assert.NoError(t, err, "creating dratopology controller")
 
 	// Enqueue a dummy key
-	testKey := "test-namespace/test-object"
+	testKey := "test-node"
 	c.queue.Add(testKey)
 
 	// Process the work item
@@ -68,8 +72,10 @@ func TestRun(t *testing.T) {
 	logger := klog.FromContext(tCtx)
 
 	fakeKubeClient := fake.NewClientset()
+	informerFactory := informers.NewSharedInformerFactory(fakeKubeClient, controller.NoResyncPeriodFunc())
+	nodeInformer := informerFactory.Core().V1().Nodes()
 
-	c, err := NewController(logger, fakeKubeClient)
+	c, err := NewController(logger, fakeKubeClient, nodeInformer)
 	assert.NoError(t, err, "creating dratopology controller")
 
 	// Start the controller in a goroutine
