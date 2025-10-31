@@ -37,8 +37,10 @@ func TestController(t *testing.T) {
 	informerFactory := informers.NewSharedInformerFactory(fakeKubeClient, controller.NoResyncPeriodFunc())
 	nodeInformer := informerFactory.Core().V1().Nodes()
 
+	copts := ControllerOptions{}
+
 	// Create the controller
-	c, err := NewController(logger, fakeKubeClient, nodeInformer)
+	c, err := NewController(logger, fakeKubeClient, nodeInformer, copts)
 	assert.NoError(t, err, "creating dratopology controller")
 
 	// Enqueue a dummy key
@@ -75,7 +77,9 @@ func TestRun(t *testing.T) {
 	informerFactory := informers.NewSharedInformerFactory(fakeKubeClient, controller.NoResyncPeriodFunc())
 	nodeInformer := informerFactory.Core().V1().Nodes()
 
-	c, err := NewController(logger, fakeKubeClient, nodeInformer)
+	copts := ControllerOptions{}
+
+	c, err := NewController(logger, fakeKubeClient, nodeInformer, copts)
 	assert.NoError(t, err, "creating dratopology controller")
 
 	// Start the controller in a goroutine
