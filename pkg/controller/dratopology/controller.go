@@ -34,15 +34,22 @@ const (
 	ControllerVersion = "v0.0.1"
 )
 
+// ControllerOptions contains options for the DRATopologyController
+type ControllerOptions struct {
+	// JSONFilePath is the file path to a JSON file containing the topology level data
+	JSONFilePath string
+}
+
 // Controller is the dratopology controller.
 type Controller struct {
 	kubeClient clientset.Interface
 	queue      workqueue.TypedRateLimitingInterface[string]
 	logger     klog.Logger
+	options      ControllerOptions
 }
 
 // NewController creates a new dratopology controller.
-func NewController(logger klog.Logger, kubeClient clientset.Interface) (*Controller, error) {
+func NewController(logger klog.Logger, kubeClient clientset.Interface, options ControllerOptions) (*Controller, error) {
 	c := &Controller{
 		kubeClient: kubeClient,
 		queue: workqueue.NewTypedRateLimitingQueueWithConfig(
@@ -50,6 +57,7 @@ func NewController(logger klog.Logger, kubeClient clientset.Interface) (*Control
 			workqueue.TypedRateLimitingQueueConfig[string]{Name: "dratopology"},
 		),
 		logger: logger,
+		options:      options,
 	}
 
 	return c, nil
@@ -62,6 +70,10 @@ func (c *Controller) Run(parent context.Context, workers int) {
 
 	c.logger.Info("Starting dratopology controller")
 
+	// Create device classes for each known topology type first
+	c.createTopologyDeviceClasses()
+
+	// then start workers to process new node events to add devices as they are seen
 	for range workers {
 		go wait.UntilWithContext(ctx, c.runWorker, time.Second)
 	}
@@ -109,4 +121,9 @@ func (c *Controller) ShutDown() {
 	c.logger.Info("Shutting down dratopology controller")
 	runtime.HandleCrash()
 	c.queue.ShutDown()
+}
+
+func (c *Controller) createTopologyDeviceClasses() {
+	c.logger.Info(fmt.Sprintf("creating topology device classes with options %v", c.options))
+	// TODO: interpret the heirarchy data into deviceclass objects
 }

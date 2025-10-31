@@ -42,6 +42,7 @@ const (
 type Options struct {
 	Logs            *logs.Options
 	ConfigOverrides clientcmd.ConfigOverrides
+	JSONFile        string
 }
 
 // ControllerContext defines the context object for the controller.
@@ -65,6 +66,9 @@ func (o *Options) Flags() cliflag.NamedFlagSets {
 
 	logsapi.AddFlags(o.Logs, nfs.FlagSet("logs"))
 
+	cfs := nfs.FlagSet("Controller")
+	cfs.StringVar(&o.JSONFile, "jsonfile", o.JSONFile, "Path to a JSON file containing the topology heirarchy Kubernetes labels.")
+
 	overrideFlags := clientcmd.RecommendedConfigOverrideFlags("kube-")
 	clientcmd.BindOverrideFlags(&o.ConfigOverrides, nfs.FlagSet("kubeconfig"), overrideFlags)
 
@@ -80,6 +84,13 @@ func NewControllerCommand() *cobra.Command {
 		Use:     dratopologyControllerName,
 		Long:    `The DRA Topology Controller is a controller that manages ResourceSlices that represent Kubernetes node topology.`,
 		Version: dratopology.ControllerVersion,
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			// Validate early we have at least one and only one topology source
+			if !cmd.Flags().Changed("jsonfile") {
+				return fmt.Errorf("at least one of --jsonfile must be specified")
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			// Activate logging as soon as possible, after that
@@ -122,6 +133,11 @@ func Run(ctx context.Context, opts *Options) error {
 	logger := klog.FromContext(ctx)
 	logger.Info(fmt.Sprintf("Starting %s, version %s", dratopologyControllerName, dratopology.ControllerVersion))
 
+	copts := dratopology.ControllerOptions{}
+	if opts.JSONFile != "" {
+		copts.JSONFilePath = opts.JSONFile
+	}
+
 	// Get control plane config
 	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
 	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, &opts.ConfigOverrides)
@@ -136,9 +152,10 @@ func Run(ctx context.Context, opts *Options) error {
 		},
 		ResyncPeriod: ResyncPeriod,
 	}
+	kubeClient := controllerContext.ClientBuilder.ClientOrDie(dratopologyControllerName)
 
 	// Construct controller
-	controller, err := dratopology.NewController(logger, controllerContext.ClientBuilder.ClientOrDie(dratopologyControllerName))
+	controller, err := dratopology.NewController(logger, kubeClient, copts)
 	if err != nil {
 		return fmt.Errorf("could not construct controller: %w", err)
 	}

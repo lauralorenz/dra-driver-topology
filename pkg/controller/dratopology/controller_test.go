@@ -33,8 +33,10 @@ func TestController(t *testing.T) {
 
 	fakeKubeClient := fake.NewClientset()
 
+	copts := ControllerOptions{}
+
 	// Create the controller
-	c, err := NewController(logger, fakeKubeClient)
+	c, err := NewController(logger, fakeKubeClient, copts)
 	assert.NoError(t, err, "creating dratopology controller")
 
 	// Enqueue a dummy key
@@ -69,7 +71,9 @@ func TestRun(t *testing.T) {
 
 	fakeKubeClient := fake.NewClientset()
 
-	c, err := NewController(logger, fakeKubeClient)
+	copts := ControllerOptions{}
+
+	c, err := NewController(logger, fakeKubeClient, copts)
 	assert.NoError(t, err, "creating dratopology controller")
 
 	// Start the controller in a goroutine
