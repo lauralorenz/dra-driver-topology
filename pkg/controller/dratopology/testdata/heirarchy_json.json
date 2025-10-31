@@ -1,0 +1,12 @@
+{
+    "name": "block",
+    "label": "cloud.google.com/gce-topology-block",
+    "child": {
+        "name": "subblock",
+        "label": "cloud.google.com/gce-topology-subblock",
+        "child": {
+            "name": "host",
+            "label": "cloud.google.com/gce-topology-host"
+        }
+    }
+}

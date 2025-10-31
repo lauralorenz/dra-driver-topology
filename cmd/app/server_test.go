@@ -19,8 +19,10 @@ package app
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
+	"k8s.io/klog/v2/ktesting"
 )
 
 // TestNewControllerCommand simply ensures that the NewControllerCommand function builds a cobra command that
@@ -35,8 +37,50 @@ func TestNewControllerCommand(t *testing.T) {
 func TestRun_InvalidClusterConfig(t *testing.T) {
 	opts := &Options{
 		Kubeconfig: "/tmp/non-existent-kubeconfig",
+		JSONFile:   "wont-get-here",
 	}
 	err := Run(context.Background(), opts)
 	assert.Error(t, err)
 	assert.ErrorContains(t, err, "no such file or directory")
+}
+
+func TestRun_NotEnoughConfig(t *testing.T) {
+	testcases := []struct {
+		name        string
+		args        []string
+		expectedErr bool
+	}{
+		{
+			name:        "no error",
+			args:        []string{"--master", "https://localhost:8080", "--jsonfile", "testdata/heirarchy_json.json"},
+			expectedErr: false,
+		},
+		{
+			name:        "needs cluster",
+			args:        []string{"--jsonfile", "randompath"},
+			expectedErr: true,
+		},
+		{
+			name:        "needs jsonfile",
+			args:        []string{"--master", "randomurl"},
+			expectedErr: true,
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			_, tctx := ktesting.NewTestContext(t)
+			ctx, cancel := context.WithTimeout(tctx, time.Duration(3*time.Second))
+			defer cancel()
+			cmd := NewControllerCommand()
+			cmd.SetArgs(tc.args)
+			err := cmd.ExecuteContext(ctx)
+			cmd.Execute()
+			if tc.expectedErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
 }

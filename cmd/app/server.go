@@ -46,6 +46,7 @@ type Options struct {
 	Logs       *logs.Options
 	Master     string
 	Kubeconfig string
+	JSONFile   string
 }
 
 // ControllerContext defines the context object for the controller.
@@ -69,6 +70,9 @@ func (o *Options) Flags() cliflag.NamedFlagSets {
 
 	logsapi.AddFlags(o.Logs, nfs.FlagSet("logs"))
 
+	cfs := nfs.FlagSet("Controller")
+	cfs.StringVar(&o.JSONFile, "jsonfile", o.JSONFile, "Path to a JSON file containing the topology heirarchy Kubernetes labels.")
+
 	fs := nfs.FlagSet("Cluster")
 	fs.StringVar(&o.Master, "master", o.Master, "The address of the Kubernetes API server (overrides any value in kubeconfig).")
 	fs.StringVar(&o.Kubeconfig, "kubeconfig", o.Kubeconfig, "Path to kubeconfig file with authorization and master location information (the master location can be overridden by the master flag).")
@@ -84,6 +88,18 @@ func NewControllerCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:  dratopologyControllerName,
 		Long: `The DRA Topology Controller is a controller that manages ResourceSlices that represent Kubernetes node topology.`,
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			// Validate early we have at least one Cluster flag
+			if !cmd.Flags().Changed("kubeconfig") && !cmd.Flags().Changed("master") {
+				return fmt.Errorf("at least one of --kubeconfig, --master must be specified")
+			}
+
+			// Validate early we have at least one and only one topology source
+			if !cmd.Flags().Changed("jsonfile") {
+				return fmt.Errorf("at least one of --jsonfile must be specified")
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			verflag.PrintAndExitIfRequested()
@@ -127,6 +143,11 @@ func Run(ctx context.Context, opts *Options) error {
 	logger := klog.FromContext(ctx)
 	logger.Info(fmt.Sprintf("Starting %s", dratopologyControllerName))
 
+	copts := dratopology.ControllerOptions{}
+	if opts.JSONFile != "" {
+		copts.JSONFilePath = opts.JSONFile
+	}
+
 	// To help debugging, immediately log version
 	logger.Info("Starting", "version", "v0.0.1")
 
@@ -147,7 +168,7 @@ func Run(ctx context.Context, opts *Options) error {
 	nodeInformer := informerFactory.Core().V1().Nodes()
 
 	// Construct controller
-	controller, err := dratopology.NewController(logger, kubeClient, nodeInformer)
+	controller, err := dratopology.NewController(logger, kubeClient, nodeInformer, copts)
 	if err != nil {
 		logger.Info("Could not construct controller", err)
 		return err

@@ -33,6 +33,12 @@ import (
 	"k8s.io/klog/v2"
 )
 
+// ControllerOptions contains options for the DRATopologyController
+type ControllerOptions struct {
+	// JSONFilePath is the file path to a JSON file containing the topology level data
+	JSONFilePath string
+}
+
 // Controller is the dratopology controller.
 type Controller struct {
 	kubeClient   clientset.Interface
@@ -40,10 +46,11 @@ type Controller struct {
 	nodeLister   v1listers.NodeLister
 	queue        workqueue.TypedRateLimitingInterface[string]
 	logger       klog.Logger
+	options      ControllerOptions
 }
 
 // NewController creates a new dratopology controller.
-func NewController(logger klog.Logger, kubeClient clientset.Interface, nodeInformer v1informers.NodeInformer) (*Controller, error) {
+func NewController(logger klog.Logger, kubeClient clientset.Interface, nodeInformer v1informers.NodeInformer, options ControllerOptions) (*Controller, error) {
 	c := &Controller{
 		kubeClient: kubeClient,
 		queue: workqueue.NewTypedRateLimitingQueueWithConfig(
@@ -53,6 +60,7 @@ func NewController(logger klog.Logger, kubeClient clientset.Interface, nodeInfor
 		nodeInformer: nodeInformer,
 		nodeLister:   nodeInformer.Lister(),
 		logger:       logger,
+		options:      options,
 	}
 
 	c.SetupNodeInformer(nodeInformer)
@@ -75,6 +83,10 @@ func (c *Controller) Run(parent context.Context, workers int) {
 
 	c.logger.Info("Starting dratopology controller")
 
+	// Create device classes for each known topology type first
+	c.createTopologyDeviceClasses()
+
+	// then start workers to process new node events to add devices as they are seen
 	for i := 0; i < workers; i++ {
 		go wait.UntilWithContext(ctx, c.runWorker, time.Second)
 	}
@@ -109,8 +121,6 @@ func (c *Controller) processNextWorkItem(ctx context.Context) bool {
 // syncHandler is invoked for each work item.
 func (c *Controller) syncHandler(ctx context.Context, key string) error {
 	c.logger.V(4).Info("Processing key", "key", key)
-	// In a real controller, this is where you would fetch the object
-	// identified by 'key' and reconcile its state.
 	c.syncNode(ctx, key)
 	return nil
 }
@@ -119,4 +129,9 @@ func (c *Controller) ShutDown(ctx context.Context) {
 	c.logger.Info("Shutting down dratopology controller")
 	runtime.HandleCrash()
 	c.queue.ShutDown()
+}
+
+func (c *Controller) createTopologyDeviceClasses() {
+	c.logger.Info(fmt.Sprintf("creating topology device classes with options %v", c.options))
+	// TODO: interpret the heirarchy data into deviceclass objects
 }
