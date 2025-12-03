@@ -36,14 +36,14 @@ import (
 )
 
 const (
-	dratopologyControllerName = "dratopology-controller-server"
+	dratopologyControllerName = "dratopology-controller"
 )
 
 // Options contains the options for running the controller.
 type Options struct {
-	Logs       *logs.Options
-	Master     string
-	Kubeconfig string
+	Logs              *logs.Options
+	APIServerEndpoint string
+	Kubeconfig        string
 }
 
 // ControllerContext defines the context object for the controller.
@@ -68,7 +68,7 @@ func (o *Options) Flags() cliflag.NamedFlagSets {
 	logsapi.AddFlags(o.Logs, nfs.FlagSet("logs"))
 
 	fs := nfs.FlagSet("Cluster")
-	fs.StringVar(&o.Master, "master", o.Master, "The address of the Kubernetes API server (overrides any value in kubeconfig).")
+	fs.StringVar(&o.APIServerEndpoint, "apiserver-endpoint", o.APIServerEndpoint, "The address of the Kubernetes API server (overrides any value in kubeconfig).")
 	fs.StringVar(&o.Kubeconfig, "kubeconfig", o.Kubeconfig, "Path to kubeconfig file with authorization and master location information (the master location can be overridden by the master flag).")
 
 	return nfs
@@ -129,10 +129,9 @@ func Run(ctx context.Context, opts *Options) error {
 	logger.Info("Starting", "version", "v0.0.1")
 
 	// Build context for controller
-	cfg, err := clientcmd.BuildConfigFromFlags(opts.Master, opts.Kubeconfig)
+	cfg, err := clientcmd.BuildConfigFromFlags(opts.APIServerEndpoint, opts.Kubeconfig)
 	if err != nil {
-		logger.Info("Could not build cluster config from provided options", err)
-		return err
+		return fmt.Errorf("could not build cluster config from provided options: %w", err)
 	}
 	controllerContext := ControllerContext{
 		ClientBuilder: clientbuilder.SimpleControllerClientBuilder{
@@ -144,8 +143,7 @@ func Run(ctx context.Context, opts *Options) error {
 	// Construct controller
 	controller, err := dratopology.NewController(logger, controllerContext.ClientBuilder.ClientOrDie(dratopologyControllerName))
 	if err != nil {
-		logger.Info("Could not construct controller", err)
-		return err
+		return fmt.Errorf("could not construct controller: %w", err)
 	}
 
 	// Run directly.

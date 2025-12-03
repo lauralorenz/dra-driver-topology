@@ -58,7 +58,7 @@ func TestController(t *testing.T) {
 	processed = c.processNextWorkItem(tCtx)
 	assert.True(t, processed, "expected processNextWorkItem to complete work item before shutdown signal")
 	processed = c.processNextWorkItem(tCtx)
-	assert.False(t, processed, "expected processNextWorkItem to return false for item recieved after shutdown")
+	assert.False(t, processed, "expected processNextWorkItem to return false for item received after shutdown")
 	assert.Equal(t, 0, c.queue.Len(), "expected queue to ignore item after receiving shutdown signal") // Item is not forgotten on shutdown
 }
 

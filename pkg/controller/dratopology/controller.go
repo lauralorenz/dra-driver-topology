@@ -67,7 +67,7 @@ func (c *Controller) Run(parent context.Context, workers int) {
 
 	c.logger.Info("Starting dratopology controller")
 
-	for i := 0; i < workers; i++ {
+	for range workers {
 		go wait.UntilWithContext(ctx, c.runWorker, time.Second)
 	}
 

@@ -27,7 +27,7 @@ import (
 // has the expected name and has flags registered.
 func TestNewControllerCommand(t *testing.T) {
 	cmd := NewControllerCommand()
-	assert.Equal(t, "dratopology-controller-server", cmd.Use)
+	assert.Equal(t, "dratopology-controller", cmd.Use)
 	assert.True(t, cmd.HasFlags())
 }
 
