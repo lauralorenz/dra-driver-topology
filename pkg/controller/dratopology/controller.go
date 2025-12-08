@@ -19,7 +19,6 @@ package dratopology
 import (
 	"context"
 	"fmt"
-	"os"
 	"os/signal"
 	"syscall"
 	"time"
@@ -54,16 +53,8 @@ func NewController(logger klog.Logger, kubeClient clientset.Interface) (*Control
 
 // Run starts the dratopology controller.
 func (c *Controller) Run(parent context.Context, workers int) {
-	ctx, cancel := context.WithCancel(parent)
-	shutdown := make(chan os.Signal, 1)
-	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
 
-	go func(ctx context.Context, c *Controller) {
-		<-shutdown
-		c.logger.Info("Shutting down gracefully...")
-		c.ShutDown(ctx)
-		cancel()
-	}(ctx, c)
+	ctx, stop := signal.NotifyContext(parent, syscall.SIGINT, syscall.SIGTERM)
 
 	c.logger.Info("Starting dratopology controller")
 
@@ -72,6 +63,10 @@ func (c *Controller) Run(parent context.Context, workers int) {
 	}
 
 	<-ctx.Done()
+	stop()
+
+	c.logger.Info("Shutting down gracefully...")
+	c.ShutDown()
 }
 
 func (c *Controller) runWorker(ctx context.Context) {
@@ -106,7 +101,7 @@ func (c *Controller) syncHandler(ctx context.Context, key string) error {
 	return nil
 }
 
-func (c *Controller) ShutDown(ctx context.Context) {
+func (c *Controller) ShutDown() {
 	c.logger.Info("Shutting down dratopology controller")
 	runtime.HandleCrash()
 	c.queue.ShutDown()

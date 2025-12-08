@@ -81,7 +81,7 @@ func TestRun(t *testing.T) {
 	assert.Eventually(t, func() bool { return c.queue.Len() == 0 }, 5*time.Second, 100*time.Millisecond, "expected queue to become empty")
 
 	// Stop the controller
-	c.ShutDown(tCtx)
+	tCtx.Cancel("")
 
 	// Ensure the queue is shut down
 	assert.Eventually(t, func() bool { return c.queue.ShuttingDown() }, 5*time.Second, 100*time.Millisecond, "expected queue to be shutting down")
