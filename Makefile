@@ -44,7 +44,7 @@ lint-config: ## Verify golangci-lint linter configuration
 
 .PHONY: run
 run: fmt vet ## Run a controller from your host.
-	go run ./cmd/main.go
+	go run ./cmd/main.go $(ARGS)
 
 .PHONY: test
 test: fmt vet ## Run tests.

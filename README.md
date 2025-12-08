@@ -2,6 +2,16 @@
 
 This repository contains a reference resource driver implemented as a Kubernetes controller to expose topological node information against Dynamic Resource Allocation (DRA) APIs.
 
+# Development
+
+You can run the controller locally with `make run`. You must specify
+`--apiserver-endpoint` or `--kubeconfig` to an `ARGS` environment variable. to
+give it access to a control plane. For example:
+
+```
+make run ARGS="--apiserver-endpoint=https://127.0.0.1:46777 --v 5"
+```
+
 ## Community, discussion, contribution, and support
 
 Learn how to engage with the Kubernetes community on the [community page](http://kubernetes.io/community/).
