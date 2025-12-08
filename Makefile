@@ -1,9 +1,7 @@
 ##@ Dependencies
 
-## Tool versions
-GOLANGCI_LINT_VERSION ?= v2.5.0
-GOLANGCI_LINT ?= github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
-
+## Tools (see go.mod tool directive for version info)
+GOLANGCI_LINT ?= go tool golangci-lint
 
 ##@ General
 
@@ -34,15 +32,15 @@ vet: ## Run go vet against code.
 
 .PHONY: lint
 lint: ## Run golangci-lint linter
-	go run $(GOLANGCI_LINT) run
+	$(GOLANGCI_LINT) run
 
 .PHONY: lint-fix
 lint-fix: ## Run golangci-lint linter and perform fixes
-	go run $(GOLANGCI_LINT) run --fix
+	$(GOLANGCI_LINT) run --fix
 
 .PHONY: lint-config
 lint-config: ## Verify golangci-lint linter configuration
-	go run $(GOLANGCI_LINT) config verify
+	$(GOLANGCI_LINT) config verify
 
 .PHONY: run
 run: fmt vet ## Run a controller from your host.
