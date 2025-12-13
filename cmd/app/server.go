@@ -30,7 +30,6 @@ import (
 	"k8s.io/component-base/logs"
 	logsapi "k8s.io/component-base/logs/api/v1"
 	"k8s.io/component-base/term"
-	"k8s.io/component-base/version/verflag"
 	"k8s.io/controller-manager/pkg/clientbuilder"
 	"k8s.io/klog/v2"
 )
@@ -84,7 +83,6 @@ func NewControllerCommand() *cobra.Command {
 		Long: `The DRA Topology Controller is a controller that manages ResourceSlices that represent Kubernetes node topology.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			verflag.PrintAndExitIfRequested()
 			// Activate logging as soon as possible, after that
 			// show flags with the final logging configuration.
 			if err := logsapi.ValidateAndApply(opts.Logs, nil); err != nil {
@@ -108,7 +106,7 @@ func NewControllerCommand() *cobra.Command {
 	fs := cmd.Flags()
 	namedFlagSets := opts.Flags()
 
-	verflag.AddFlags(namedFlagSets.FlagSet("global"))
+	fs.AddFlagSet(namedFlagSets.FlagSet("global"))
 	globalflag.AddGlobalFlags(namedFlagSets.FlagSet("global"), cmd.Name(), logs.SkipLoggingConfigurationFlags())
 
 	for _, f := range namedFlagSets.FlagSets {
@@ -123,10 +121,8 @@ func NewControllerCommand() *cobra.Command {
 
 func Run(ctx context.Context, opts *Options) error {
 	logger := klog.FromContext(ctx)
-	logger.Info(fmt.Sprintf("Starting %s", dratopologyControllerName))
-
-	// To help debugging, immediately log version
-	logger.Info("Starting", "version", "v0.0.1")
+	version := "v0.0.1"
+	logger.Info(fmt.Sprintf("Starting %s, version %s", dratopologyControllerName, version))
 
 	// Build context for controller
 	cfg, err := clientcmd.BuildConfigFromFlags(opts.APIServerEndpoint, opts.Kubeconfig)
