@@ -5,7 +5,7 @@ This repository contains a reference resource driver implemented as a Kubernetes
 # Development
 
 You can run the controller locally with `make run`. You must specify
-`--apiserver-endpoint` or `--kubeconfig` to an `ARGS` environment variable. to
+`--apiserver-endpoint` or `--kubeconfig` to an `ARGS` environment variable to
 give it access to a control plane. For example:
 
 ```
