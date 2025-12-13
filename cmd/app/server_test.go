@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 // TestNewControllerCommand simply ensures that the NewControllerCommand function builds a cobra command that
@@ -31,12 +32,12 @@ func TestNewControllerCommand(t *testing.T) {
 	assert.True(t, cmd.HasFlags())
 }
 
-// TestRun_InvalidClusterConfig ensures that the Run function returns an error when an invalid kubeconfig is provided.
+// TestRun_InvalidClusterConfig ensures that the Run function returns an error when an invalid config is provided.
 func TestRun_InvalidClusterConfig(t *testing.T) {
 	opts := &Options{
-		Kubeconfig: "/tmp/non-existent-kubeconfig",
+		ConfigOverrides: clientcmd.ConfigOverrides{CurrentContext: "non-existent-context"},
 	}
 	err := Run(context.Background(), opts)
 	assert.Error(t, err)
-	assert.ErrorContains(t, err, "no such file or directory")
+	assert.ErrorContains(t, err, "could not build cluster config from provided options")
 }

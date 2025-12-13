@@ -40,9 +40,8 @@ const (
 
 // Options contains the options for running the controller.
 type Options struct {
-	Logs              *logs.Options
-	APIServerEndpoint string
-	Kubeconfig        string
+	Logs            *logs.Options
+	ConfigOverrides clientcmd.ConfigOverrides
 }
 
 // ControllerContext defines the context object for the controller.
@@ -66,9 +65,8 @@ func (o *Options) Flags() cliflag.NamedFlagSets {
 
 	logsapi.AddFlags(o.Logs, nfs.FlagSet("logs"))
 
-	fs := nfs.FlagSet("Cluster")
-	fs.StringVar(&o.APIServerEndpoint, "apiserver-endpoint", o.APIServerEndpoint, "The address of the Kubernetes API server (overrides any value in kubeconfig).")
-	fs.StringVar(&o.Kubeconfig, "kubeconfig", o.Kubeconfig, "Path to kubeconfig file with authorization and master location information (the master location can be overridden by the master flag).")
+	overrideFlags := clientcmd.RecommendedConfigOverrideFlags("kube-")
+	clientcmd.BindOverrideFlags(&o.ConfigOverrides, nfs.FlagSet("kubeconfig"), overrideFlags)
 
 	return nfs
 }
@@ -124,11 +122,14 @@ func Run(ctx context.Context, opts *Options) error {
 	version := "v0.0.1"
 	logger.Info(fmt.Sprintf("Starting %s, version %s", dratopologyControllerName, version))
 
-	// Build context for controller
-	cfg, err := clientcmd.BuildConfigFromFlags(opts.APIServerEndpoint, opts.Kubeconfig)
+	// Get control plane config
+	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
+	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, &opts.ConfigOverrides)
+	cfg, err := kubeConfig.ClientConfig()
 	if err != nil {
 		return fmt.Errorf("could not build cluster config from provided options: %w", err)
 	}
+	// Build context for controller
 	controllerContext := ControllerContext{
 		ClientBuilder: clientbuilder.SimpleControllerClientBuilder{
 			ClientConfig: cfg,
