@@ -77,8 +77,9 @@ func NewControllerCommand() *cobra.Command {
 	}
 
 	cmd := &cobra.Command{
-		Use:  dratopologyControllerName,
-		Long: `The DRA Topology Controller is a controller that manages ResourceSlices that represent Kubernetes node topology.`,
+		Use:     dratopologyControllerName,
+		Long:    `The DRA Topology Controller is a controller that manages ResourceSlices that represent Kubernetes node topology.`,
+		Version: dratopology.ControllerVersion,
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			// Activate logging as soon as possible, after that
@@ -119,8 +120,7 @@ func NewControllerCommand() *cobra.Command {
 
 func Run(ctx context.Context, opts *Options) error {
 	logger := klog.FromContext(ctx)
-	version := "v0.0.1"
-	logger.Info(fmt.Sprintf("Starting %s, version %s", dratopologyControllerName, version))
+	logger.Info(fmt.Sprintf("Starting %s, version %s", dratopologyControllerName, dratopology.ControllerVersion))
 
 	// Get control plane config
 	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()

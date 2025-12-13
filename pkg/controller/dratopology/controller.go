@@ -30,6 +30,10 @@ import (
 	"k8s.io/klog/v2"
 )
 
+const (
+	ControllerVersion = "v0.0.1"
+)
+
 // Controller is the dratopology controller.
 type Controller struct {
 	kubeClient clientset.Interface
