@@ -1,0 +1,5 @@
+# Local binaries
+bin
+
+# Temporary outputs, including output of the go coverage tool
+*.out
