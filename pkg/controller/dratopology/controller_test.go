@@ -24,7 +24,6 @@ import (
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/klog/v2"
-	"k8s.io/kubernetes/pkg/controller"
 	ktesting "k8s.io/kubernetes/test/utils/ktesting"
 )
 
@@ -34,7 +33,7 @@ func TestController(t *testing.T) {
 	logger := klog.FromContext(tCtx)
 
 	fakeKubeClient := fake.NewClientset()
-	informerFactory := informers.NewSharedInformerFactory(fakeKubeClient, controller.NoResyncPeriodFunc())
+	informerFactory := informers.NewSharedInformerFactory(fakeKubeClient, 0)
 	nodeInformer := informerFactory.Core().V1().Nodes()
 
 	copts := ControllerOptions{}
@@ -74,7 +73,7 @@ func TestRun(t *testing.T) {
 	logger := klog.FromContext(tCtx)
 
 	fakeKubeClient := fake.NewClientset()
-	informerFactory := informers.NewSharedInformerFactory(fakeKubeClient, controller.NoResyncPeriodFunc())
+	informerFactory := informers.NewSharedInformerFactory(fakeKubeClient, 0)
 	nodeInformer := informerFactory.Core().V1().Nodes()
 
 	copts := ControllerOptions{}
