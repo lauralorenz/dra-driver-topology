@@ -12,7 +12,7 @@ import (
 // HeirarchyPlugin is an interface for an object that can read a specific hierarchy, for example from a JSON file, YAML file, or a Kueue Topology CRD.
 type HeirarchyPlugin interface {
 	// ReadHeirarchy reads the hierarchy labels from its expected source data.
-	ReadHeirarchy(opts map[string]string) ([]string, []labels.Selector, int, error)
+	ReadHeirarchy(opts map[string]string) ([]Level, []labels.Selector, int, error)
 }
 
 // BasicHeirarchy tracks labels for arbitrary named levels and constructs Kubernetes selectors for them.
@@ -36,6 +36,7 @@ func NewBasicHeirarchyReader(plugin HeirarchyPlugin) *BasicHeirarchy {
 	}
 }
 
+// JSON Heirarchy Plugin can read a topo heirarchy from a well-formed JSON file.
 type JSONHeirarchyPlugin struct{}
 
 func (h *JSONHeirarchyPlugin) ReadHeirarchy(opts map[string]string) ([]Level, []labels.Selector, int, error) {
