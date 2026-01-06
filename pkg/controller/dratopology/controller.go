@@ -126,8 +126,18 @@ func (c *Controller) ShutDown() {
 func (c *Controller) createTopologyDeviceClasses(ctx context.Context) {
 	c.logger.Info(fmt.Sprintf("creating topology device classes with options %v", c.options))
 
-	plugin := &JSONHeirarchyPlugin{}
-	opts := map[string]string{"file": c.options.JSONFilePath}
+	var plugin HeirarchyPlugin
+	var opts map[string]string
+
+	switch {
+	case c.options.JSONFilePath != "":
+		plugin = &JSONHeirarchyPlugin{}
+		opts = map[string]string{"file": c.options.JSONFilePath}
+	default:
+		c.logger.Error(nil, "no topology source specified. You must provide a well-formed JSON to --jsonfilepath.")
+		return
+	}
+
 	levels, selectors, count, err := plugin.ReadHeirarchy(opts)
 	if err != nil {
 		c.logger.Error(err, "failed to read hierarchy")
