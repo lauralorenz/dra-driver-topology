@@ -11,15 +11,15 @@ func TestJSONHeirarchyPlugin_ReadHeirarchy(t *testing.T) {
 		"file": "testdata/heirarchy_json.json",
 	}
 
-	expectedLevels := []string{
-		"cloud.google.com/gce-topology-block",
-		"cloud.google.com/gce-topology-subblock",
-		"cloud.google.com/gce-topology-host",
+	expectedLevels := []Level{
+		{Name: "block", Label: "topo.example.com/block"},
+		{Name: "subblock", Label: "topo.example.com/subblock"},
+		{Name: "host", Label: "topo.example.com/host"},
 	}
 	expectedSelectorLabels := []string{
-		"cloud.google.com/gce-topology-block",
-		"cloud.google.com/gce-topology-subblock",
-		"cloud.google.com/gce-topology-host",
+		"topo.example.com/block",
+		"topo.example.com/subblock",
+		"topo.example.com/host",
 	}
 	expectedCount := 3
 
