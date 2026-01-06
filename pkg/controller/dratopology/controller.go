@@ -79,7 +79,7 @@ func (c *Controller) Run(parent context.Context, workers int) {
 	c.logger.Info("Starting dratopology controller")
 
 	// Create device classes for each known topology type first
-	c.createTopologyDeviceClasses()
+	c.createTopologyDeviceClasses(ctx)
 
 	// then start workers to process new node events to add devices as they are seen
 	for range workers {
@@ -130,7 +130,24 @@ func (c *Controller) ShutDown() {
 	c.queue.ShutDown()
 }
 
-func (c *Controller) createTopologyDeviceClasses() {
+func (c *Controller) createTopologyDeviceClasses(ctx context.Context) {
 	c.logger.Info(fmt.Sprintf("creating topology device classes with options %v", c.options))
-	// TODO: interpret the heirarchy data into deviceclass objects
+
+	plugin := &JSONHeirarchyPlugin{}
+	opts := map[string]string{"file": c.options.JSONFilePath}
+	levels, selectors, count, err := plugin.ReadHeirarchy(opts)
+	if err != nil {
+		c.logger.Error(err, "failed to read hierarchy")
+		return
+	}
+
+	heirarchy := &BasicHeirarchy{
+		levels:    levels,
+		selectors: selectors,
+		count:     count,
+	}
+
+	if err := SyncDeviceClasses(ctx, c.kubeClient, heirarchy); err != nil {
+		c.logger.Error(err, "failed to sync device classes")
+	}
 }

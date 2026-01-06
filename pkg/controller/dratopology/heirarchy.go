@@ -15,12 +15,18 @@ type HeirarchyPlugin interface {
 	ReadHeirarchy(opts map[string]string) ([]string, []labels.Selector, int, error)
 }
 
-// BasicHeirarchy tracks label selectors for block, subblock, and host.
+// BasicHeirarchy tracks labels for arbitrary named levels and constructs Kubernetes selectors for them.
 type BasicHeirarchy struct {
 	reader    HeirarchyPlugin
-	levels    []string
+	levels    []Level
 	selectors []labels.Selector
 	count     int
+}
+
+// Level stores data for a topo level's name and associated Kubernetes label string.
+type Level struct {
+	Name  string
+	Label string
 }
 
 // NewBasicHeirarchyReader creates a new BasicHeirarchyReader with the configured heirarchy plugin.
@@ -32,7 +38,7 @@ func NewBasicHeirarchyReader(plugin HeirarchyPlugin) *BasicHeirarchy {
 
 type JSONHeirarchyPlugin struct{}
 
-func (h *JSONHeirarchyPlugin) ReadHeirarchy(opts map[string]string) ([]string, []labels.Selector, int, error) {
+func (h *JSONHeirarchyPlugin) ReadHeirarchy(opts map[string]string) ([]Level, []labels.Selector, int, error) {
 	path, ok := opts["file"]
 	if !ok {
 		return nil, nil, 0, fmt.Errorf("No file provided")
@@ -50,18 +56,23 @@ func (h *JSONHeirarchyPlugin) ReadHeirarchy(opts map[string]string) ([]string, [
 		return nil, nil, 0, fmt.Errorf("failed to decode JSON: %w", err)
 	}
 
-	var levels []string
+	var levels []Level
 	var selectors []labels.Selector
 	count := 0
 
 	// How to walk the heirarchy
-	var walk func(map[string]interface{}, []string) error
-	walk = func(currentData map[string]interface{}, currentLevels []string) error {
+	var walk func(map[string]interface{}, []Level) error
+	walk = func(currentData map[string]interface{}, currentLevels []Level) error {
 		label, ok := currentData["label"].(string)
 		if !ok {
 			return fmt.Errorf("failed to find label for topology data from JSON: %w", err)
 		}
-		currentLevels = append(currentLevels, label)
+		name, ok := currentData["name"].(string)
+		if !ok {
+			return fmt.Errorf("failed to find name for topology data from JSON: %w", err)
+		}
+
+		currentLevels = append(currentLevels, Level{Name: name, Label: label})
 
 		// Create a proper label selector object for this data.
 		// Note: this assumes that Exists is the correct selector for the labels in the heirarchy
@@ -92,7 +103,7 @@ func (h *JSONHeirarchyPlugin) ReadHeirarchy(opts map[string]string) ([]string, [
 	}
 
 	// Start walking from the root of the JSON data
-	if err := walk(data, []string{}); err != nil {
+	if err := walk(data, []Level{}); err != nil {
 		return nil, nil, 0, fmt.Errorf("failed to walk JSON heirarchy: %w", err)
 	}
 
