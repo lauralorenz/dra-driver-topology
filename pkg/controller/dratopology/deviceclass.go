@@ -17,8 +17,8 @@ var (
 )
 
 // SyncDeviceClasses ensures that the DeviceClass objects in the API server
-// reflect the state of the BasicHeirarchy.
-func SyncDeviceClasses(ctx context.Context, clientset kubernetes.Interface, hierarchy *BasicHeirarchy) error {
+// reflect the state of the BasicHierarchy.
+func SyncDeviceClasses(ctx context.Context, clientset kubernetes.Interface, hierarchy *BasicHierarchy) error {
 	logger := klog.FromContext(ctx)
 
 	if len(hierarchy.selectors) != len(hierarchy.levels) {

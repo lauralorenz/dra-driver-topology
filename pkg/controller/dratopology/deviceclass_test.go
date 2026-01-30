@@ -19,7 +19,7 @@ func TestSyncDeviceClasses(t *testing.T) {
 	require.NoError(t, err)
 	selector := labels.NewSelector().Add(*requirement)
 
-	hierarchy := &BasicHeirarchy{
+	hierarchy := &BasicHierarchy{
 		levels:    []Level{{Name: "host", Label: "topo.example.com/host"}},
 		selectors: []labels.Selector{selector},
 		count:     1,
@@ -29,7 +29,7 @@ func TestSyncDeviceClasses(t *testing.T) {
 	require.NoError(t, err)
 	selector2 := labels.NewSelector().Add(*requirement, *requirement2)
 
-	hierarchy2 := &BasicHeirarchy{
+	hierarchy2 := &BasicHierarchy{
 		levels:    []Level{{Name: "host", Label: "topo.example.com/updated-host-label"}},
 		selectors: []labels.Selector{selector2},
 		count:     1,
@@ -75,7 +75,7 @@ func TestSyncDeviceClasses_NewClass(t *testing.T) {
 	require.NoError(t, err)
 	sel2 := labels.NewSelector().Add(*req2)
 
-	hierarchy := &BasicHeirarchy{
+	hierarchy := &BasicHierarchy{
 		levels: []Level{
 			{Name: "host", Label: "topo.example.com/host"},
 			{Name: "subblock", Label: "another-label"},

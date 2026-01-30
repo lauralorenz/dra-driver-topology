@@ -126,31 +126,31 @@ func (c *Controller) ShutDown() {
 func (c *Controller) createTopologyDeviceClasses(ctx context.Context) {
 	c.logger.Info(fmt.Sprintf("creating topology device classes with options %v", c.options))
 
-	var plugin HeirarchyPlugin
+	var plugin HierarchyPlugin
 	var opts map[string]string
 
 	switch {
 	case c.options.JSONFilePath != "":
-		plugin = &JSONHeirarchyPlugin{}
+		plugin = &JSONHierarchyPlugin{}
 		opts = map[string]string{"file": c.options.JSONFilePath}
 	default:
 		c.logger.Error(nil, "no topology source specified. You must provide a well-formed JSON to --topology-config-json.")
 		return
 	}
 
-	levels, selectors, count, err := plugin.ReadHeirarchy(opts)
+	levels, selectors, count, err := plugin.ReadHierarchy(opts)
 	if err != nil {
 		c.logger.Error(err, "failed to read hierarchy")
 		return
 	}
 
-	heirarchy := &BasicHeirarchy{
+	hierarchy := &BasicHierarchy{
 		levels:    levels,
 		selectors: selectors,
 		count:     count,
 	}
 
-	if err := SyncDeviceClasses(ctx, c.kubeClient, heirarchy); err != nil {
+	if err := SyncDeviceClasses(ctx, c.kubeClient, hierarchy); err != nil {
 		c.logger.Error(err, "failed to sync device classes")
 	}
 }

@@ -53,7 +53,7 @@ func TestRun_NotEnoughConfig(t *testing.T) {
 	}{
 		{
 			name:        "no error",
-			args:        []string{"--kube-server", "https://localhost:8080", "--topology-config-json", "testdata/heirarchy_json.json"},
+			args:        []string{"--kube-server", "https://localhost:8080", "--topology-config-json", "testdata/hierarchy_json.json"},
 			expectedErr: false,
 		},
 		{
