@@ -15,8 +15,8 @@ make run ARGS="--apiserver-endpoint=https://127.0.0.1:46777 --v 5"
 ## Updating tool dependencies
 
 Go tools in this repo are experimentally being managed using a separate module
-file and the `go tool` command (new as of Go 1.24) in such a way as to isolate
-the tool dependencies from the project dependencies.
+file for each tool and the `go tool` command (new as of Go 1.24) in such a way as to isolate
+the tool dependencies from each other's and the project's dependencies.
 
 To update the separate go.mod file properly, run go get with the -tool option
 and the correct -modfile target, for example:
