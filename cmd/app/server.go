@@ -67,7 +67,7 @@ func (o *Options) Flags() cliflag.NamedFlagSets {
 	logsapi.AddFlags(o.Logs, nfs.FlagSet("logs"))
 
 	cfs := nfs.FlagSet("Controller")
-	cfs.StringVar(&o.JSONFile, "jsonfile", o.JSONFile, "Path to a JSON file containing the topology heirarchy Kubernetes labels.")
+	cfs.StringVar(&o.JSONFile, "topology-config-json", o.JSONFile, "Path to a JSON file containing the topology heirarchy Kubernetes labels.")
 
 	overrideFlags := clientcmd.RecommendedConfigOverrideFlags("kube-")
 	clientcmd.BindOverrideFlags(&o.ConfigOverrides, nfs.FlagSet("kubeconfig"), overrideFlags)
@@ -86,8 +86,8 @@ func NewControllerCommand() *cobra.Command {
 		Version: dratopology.ControllerVersion,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			// Validate early we have at least one and only one topology source
-			if !cmd.Flags().Changed("jsonfile") {
-				return fmt.Errorf("at least one of --jsonfile must be specified")
+			if !cmd.Flags().Changed("topology-config-json") {
+				return fmt.Errorf("at least one of --topology-config-json must be specified")
 			}
 			return nil
 		},
