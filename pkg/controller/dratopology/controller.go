@@ -45,7 +45,7 @@ type Controller struct {
 	kubeClient clientset.Interface
 	queue      workqueue.TypedRateLimitingInterface[string]
 	logger     klog.Logger
-	options      ControllerOptions
+	options    ControllerOptions
 }
 
 // NewController creates a new dratopology controller.
@@ -56,8 +56,8 @@ func NewController(logger klog.Logger, kubeClient clientset.Interface, options C
 			workqueue.DefaultTypedControllerRateLimiter[string](),
 			workqueue.TypedRateLimitingQueueConfig[string]{Name: "dratopology"},
 		),
-		logger: logger,
-		options:      options,
+		logger:  logger,
+		options: options,
 	}
 
 	return c, nil
@@ -134,7 +134,7 @@ func (c *Controller) createTopologyDeviceClasses(ctx context.Context) {
 		plugin = &JSONHeirarchyPlugin{}
 		opts = map[string]string{"file": c.options.JSONFilePath}
 	default:
-		c.logger.Error(nil, "no topology source specified. You must provide a well-formed JSON to --jsonfilepath.")
+		c.logger.Error(nil, "no topology source specified. You must provide a well-formed JSON to --topology-config-json.")
 		return
 	}
 
