@@ -23,7 +23,7 @@ import (
 func TestJSONHierarchyPlugin_ReadHierarchy(t *testing.T) {
 	plugin := &JSONHierarchyPlugin{}
 	opts := map[string]string{
-		"file": "testdata/heirarchy_json.json",
+		"file": "testdata/hierarchy_json.json",
 	}
 
 	expectedLevels := []Level{
