@@ -21,10 +21,7 @@ import (
 )
 
 func TestJSONHierarchyPlugin_ReadHierarchy(t *testing.T) {
-	plugin := &JSONHierarchyPlugin{}
-	opts := map[string]string{
-		"file": "testdata/hierarchy_json.json",
-	}
+	plugin := &JSONHierarchyPlugin{path: "testdata/hierarchy_json.json"}
 
 	expectedLevels := []Level{
 		{Name: "block", Label: "topo.example.com/block"},
@@ -38,7 +35,7 @@ func TestJSONHierarchyPlugin_ReadHierarchy(t *testing.T) {
 	}
 	expectedCount := 3
 
-	levels, selectors, count, err := plugin.ReadHierarchy(opts)
+	levels, selectors, count, err := plugin.ReadHierarchy()
 	if err != nil {
 		t.Fatalf("ReadHierarchy() returned an unexpected error: %v", err)
 	}

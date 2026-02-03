@@ -28,7 +28,7 @@ import (
 // HierarchyPlugin is an interface for an object that can read a specific hierarchy, for example from a JSON file, YAML file, or a Kueue Topology CRD.
 type HierarchyPlugin interface {
 	// ReadHierarchy reads the hierarchy labels from its expected source data.
-	ReadHierarchy(opts map[string]string) ([]Level, []labels.Selector, int, error)
+	ReadHierarchy() ([]Level, []labels.Selector, int, error)
 }
 
 // BasicHierarchy tracks labels for arbitrary named levels and constructs Kubernetes selectors for them.
@@ -53,15 +53,16 @@ func NewBasicHierarchyReader(plugin HierarchyPlugin) *BasicHierarchy {
 }
 
 // JSON Hierarchy Plugin can read a topo hierarchy from a well-formed JSON file.
-type JSONHierarchyPlugin struct{}
+type JSONHierarchyPlugin struct {
+	path string
+}
 
-func (h *JSONHierarchyPlugin) ReadHierarchy(opts map[string]string) ([]Level, []labels.Selector, int, error) {
-	path, ok := opts["file"]
-	if !ok {
+func (h *JSONHierarchyPlugin) ReadHierarchy() ([]Level, []labels.Selector, int, error) {
+	if h.path == "" {
 		return nil, nil, 0, fmt.Errorf("No file provided")
 	}
 
-	file, err := os.Open(path)
+	file, err := os.Open(h.path)
 	if err != nil {
 		return nil, nil, 0, fmt.Errorf("failed to open JSON file: %w", err)
 	}
