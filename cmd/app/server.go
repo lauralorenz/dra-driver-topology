@@ -152,7 +152,10 @@ func Run(ctx context.Context, opts *Options) error {
 		},
 		ResyncPeriod: ResyncPeriod,
 	}
-	kubeClient := controllerContext.ClientBuilder.ClientOrDie(dratopologyControllerName)
+	kubeClient, err := controllerContext.ClientBuilder.Client(dratopologyControllerName)
+	if err != nil {
+		return fmt.Errorf("could not construct kubernetes client: %w", err)
+	}
 
 	// Construct controller
 	controller, err := dratopology.NewController(logger, kubeClient, copts)
