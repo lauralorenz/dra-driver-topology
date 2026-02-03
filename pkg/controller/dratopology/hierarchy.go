@@ -42,7 +42,13 @@ type FlatHierarchy struct {
 	count     int
 }
 
-// Level stores unmarshalled data for an individual topo level from a data source.
+// Data stores the unmarshalled data from a topology data source.
+type Data struct {
+	Version int
+	Root    Level
+}
+
+// Level stores unmarshalled data for a root branch from a topology data source.
 type Level struct {
 	Name     string
 	Label    string
@@ -78,7 +84,7 @@ func (h *JSONHierarchyPlugin) ReadHierarchy() ([]FlatLevel, []labels.Selector, i
 	}
 	defer file.Close()
 
-	var data Level
+	var data Data
 	decoder := json.NewDecoder(file)
 	if err := decoder.Decode(&data); err != nil {
 		return nil, nil, 0, fmt.Errorf("failed to decode JSON: %w", err)
@@ -128,7 +134,7 @@ func (h *JSONHierarchyPlugin) ReadHierarchy() ([]FlatLevel, []labels.Selector, i
 	}
 
 	// Start walking from the root of the JSON data
-	if err := walk(data, []FlatLevel{}); err != nil {
+	if err := walk(data.Root, []FlatLevel{}); err != nil {
 		return nil, nil, 0, fmt.Errorf("failed to walk JSON hierarchy: %w", err)
 	}
 
