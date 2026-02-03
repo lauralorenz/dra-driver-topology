@@ -1,12 +1,16 @@
 {
     "name": "block",
     "label": "topo.example.com/block",
-    "child": {
-        "name": "subblock",
-        "label": "topo.example.com/subblock",
-        "child": {
-            "name": "host",
-            "label": "topo.example.com/host"
+    "children": [
+        {
+            "name": "subblock",
+            "label": "topo.example.com/subblock",
+            "children": [
+                {
+                    "name": "host",
+                    "label": "topo.example.com/host"
+                }
+            ]
         }
-    }
+    ]
 }

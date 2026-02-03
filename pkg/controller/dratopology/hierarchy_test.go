@@ -16,14 +16,15 @@ limitations under the License.
 package dratopology
 
 import (
-	"reflect"
 	"testing"
+
+	"k8s.io/apimachinery/pkg/util/diff"
 )
 
 func TestJSONHierarchyPlugin_ReadHierarchy(t *testing.T) {
 	plugin := &JSONHierarchyPlugin{path: "testdata/hierarchy_json.json"}
 
-	expectedLevels := []Level{
+	expectedLevels := []FlatLevel{
 		{Name: "block", Label: "topo.example.com/block"},
 		{Name: "subblock", Label: "topo.example.com/subblock"},
 		{Name: "host", Label: "topo.example.com/host"},
@@ -40,8 +41,8 @@ func TestJSONHierarchyPlugin_ReadHierarchy(t *testing.T) {
 		t.Fatalf("ReadHierarchy() returned an unexpected error: %v", err)
 	}
 
-	if !reflect.DeepEqual(levels, expectedLevels) {
-		t.Errorf("ReadHierarchy() levels = %v, want %v", levels, expectedLevels)
+	if d := diff.Diff(levels, expectedLevels); d != "" {
+		t.Errorf("ReadHierarchy() levels = %v", d)
 	}
 
 	if len(selectors) != len(expectedSelectorLabels) {
@@ -51,8 +52,8 @@ func TestJSONHierarchyPlugin_ReadHierarchy(t *testing.T) {
 	for i, s := range selectors {
 		got, _ := s.Requirements()
 		want := expectedSelectorLabels[i]
-		if !reflect.DeepEqual(got.String(), want) {
-			t.Errorf("ReadHierarchy() selector[%d] = %q, want %q", i, got, want)
+		if d := diff.Diff(got.String(), want); d != "" {
+			t.Errorf("ReadHierarchy() selector[%d] = %s", i, d)
 		}
 	}
 

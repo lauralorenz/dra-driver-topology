@@ -144,7 +144,7 @@ func (c *Controller) createTopologyDeviceClasses(ctx context.Context) {
 		return
 	}
 
-	hierarchy := &BasicHierarchy{
+	hierarchy := &FlatHierarchy{
 		levels:    levels,
 		selectors: selectors,
 		count:     count,

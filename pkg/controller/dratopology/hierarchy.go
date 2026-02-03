@@ -27,27 +27,37 @@ import (
 
 // HierarchyPlugin is an interface for an object that can read a specific hierarchy, for example from a JSON file, YAML file, or a Kueue Topology CRD.
 type HierarchyPlugin interface {
-	// ReadHierarchy reads the hierarchy labels from its expected source data.
-	ReadHierarchy() ([]Level, []labels.Selector, int, error)
+	// ReadHierarchy reads the hierarchy labels from its expected source data,
+	// returning a flattened list of all the topo levels, an ordered list of the
+	// Kubernetes Selector objects that represent the same indexed topo levels,
+	// and the number of levels obeserved (used for testing).
+	ReadHierarchy() ([]FlatLevel, []labels.Selector, int, error)
 }
 
-// BasicHierarchy tracks labels for arbitrary named levels and constructs Kubernetes selectors for them.
-type BasicHierarchy struct {
+// FlatHierarchy can read and store a flattened list of topo levels, including constructed Kubernetes selectors for them.
+type FlatHierarchy struct {
 	reader    HierarchyPlugin
-	levels    []Level
+	levels    []FlatLevel
 	selectors []labels.Selector
 	count     int
 }
 
-// Level stores data for a topo level's name and associated Kubernetes label string.
+// Level stores unmarshalled data for an individual topo level from a data source.
 type Level struct {
+	Name     string
+	Label    string
+	Children []*Level
+}
+
+// FlatLevel stores data for an individual topo level without its children
+type FlatLevel struct {
 	Name  string
 	Label string
 }
 
 // NewBasicHierarchyReader creates a new BasicHierarchyReader with the configured hierarchy plugin.
-func NewBasicHierarchyReader(plugin HierarchyPlugin) *BasicHierarchy {
-	return &BasicHierarchy{
+func NewBasicHierarchyReader(plugin HierarchyPlugin) *FlatHierarchy {
+	return &FlatHierarchy{
 		reader: plugin,
 	}
 }
@@ -57,7 +67,7 @@ type JSONHierarchyPlugin struct {
 	path string
 }
 
-func (h *JSONHierarchyPlugin) ReadHierarchy() ([]Level, []labels.Selector, int, error) {
+func (h *JSONHierarchyPlugin) ReadHierarchy() ([]FlatLevel, []labels.Selector, int, error) {
 	if h.path == "" {
 		return nil, nil, 0, fmt.Errorf("No file provided")
 	}
@@ -68,48 +78,45 @@ func (h *JSONHierarchyPlugin) ReadHierarchy() ([]Level, []labels.Selector, int, 
 	}
 	defer file.Close()
 
-	var data map[string]interface{}
+	var data Level
 	decoder := json.NewDecoder(file)
 	if err := decoder.Decode(&data); err != nil {
 		return nil, nil, 0, fmt.Errorf("failed to decode JSON: %w", err)
 	}
 
-	var levels []Level
+	var levels []FlatLevel
 	var selectors []labels.Selector
 	count := 0
 
+	// Flatten the hierarchy into individual name/label pairs
+
 	// How to walk the hierarchy
-	var walk func(map[string]interface{}, []Level) error
-	walk = func(currentData map[string]interface{}, currentLevels []Level) error {
-		label, ok := currentData["label"].(string)
-		if !ok {
+	var walk func(Level, []FlatLevel) error
+	walk = func(l Level, currentLevels []FlatLevel) error {
+		if l.Label == "" {
 			return fmt.Errorf("failed to find label for topology data from JSON: %w", err)
 		}
-		name, ok := currentData["name"].(string)
-		if !ok {
+		if l.Name == "" {
 			return fmt.Errorf("failed to find name for topology data from JSON: %w", err)
 		}
 
-		currentLevels = append(currentLevels, Level{Name: name, Label: label})
+		currentLevels = append(currentLevels, FlatLevel{Name: l.Name, Label: l.Label})
 
-		// Create a proper label selector object for this data.
-		// Note: this assumes that Exists is the correct selector for the labels in the hierarchy
-		// This may need to be changed or relaxed depending on what other types of label heirarchies we run into
-		s := labels.NewSelector()
-		r, err := labels.NewRequirement(label, selection.Exists, []string{})
+		s, err := constructLabel(l)
 		if err != nil {
-			return fmt.Errorf("failed to create label selector requirement: %w", err)
+			return fmt.Errorf("failed to find construct Kubernetes Selector object for label %v: %w", l, err)
 		}
-		s = s.Add(*r)
 		selectors = append(selectors, s)
 
 		// increase the number of levels we've observed
 		count++
 
 		// see if there is further to go in the hierarchy
-		if child, ok := currentData["child"]; ok {
-			if err := walk(child.(map[string]interface{}), currentLevels); err != nil {
-				return fmt.Errorf("failed to walk JSON hierarchy after level %d: %w", count, err)
+		if len(l.Children) > 0 {
+			for _, child := range l.Children {
+				if err := walk(*child, currentLevels); err != nil {
+					return fmt.Errorf("failed to walk JSON hierarchy after level %d: %w", count, err)
+				}
 			}
 		} else {
 			// If no children, this is a leaf node, so add its levels
@@ -121,10 +128,23 @@ func (h *JSONHierarchyPlugin) ReadHierarchy() ([]Level, []labels.Selector, int, 
 	}
 
 	// Start walking from the root of the JSON data
-	if err := walk(data, []Level{}); err != nil {
+	if err := walk(data, []FlatLevel{}); err != nil {
 		return nil, nil, 0, fmt.Errorf("failed to walk JSON hierarchy: %w", err)
 	}
 
 	return levels, selectors, count, nil
 
+}
+
+// constructLabel creates a labels.Selector object for the described label
+func constructLabel(l Level) (labels.Selector, error) {
+	// Note: this assumes that Exists is the correct selector for the labels in the hierarchy
+	// This may need to be changed or relaxed depending on what other types of label heirarchies we run into
+	s := labels.NewSelector()
+	r, err := labels.NewRequirement(l.Label, selection.Exists, []string{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create label selector requirement: %w", err)
+	}
+	s = s.Add(*r)
+	return s, nil
 }

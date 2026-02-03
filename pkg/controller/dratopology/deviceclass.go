@@ -18,7 +18,7 @@ var (
 
 // SyncDeviceClasses ensures that the DeviceClass objects in the API server
 // reflect the state of the BasicHierarchy.
-func SyncDeviceClasses(ctx context.Context, clientset kubernetes.Interface, hierarchy *BasicHierarchy) error {
+func SyncDeviceClasses(ctx context.Context, clientset kubernetes.Interface, hierarchy *FlatHierarchy) error {
 	logger := klog.FromContext(ctx)
 
 	if len(hierarchy.selectors) != len(hierarchy.levels) {
@@ -33,7 +33,7 @@ func SyncDeviceClasses(ctx context.Context, clientset kubernetes.Interface, hier
 
 		desiredDeviceClass, err := buildDeviceClass(name, topoLevel)
 		if err != nil {
-			return fmt.Errorf("failed to build desired DeviceClass for level %s: %w", level, err)
+			return fmt.Errorf("failed to build desired DeviceClass for level %v: %w", level, err)
 		}
 
 		currentDeviceClass, err := clientset.ResourceV1().DeviceClasses().Get(ctx, name, metav1.GetOptions{})
