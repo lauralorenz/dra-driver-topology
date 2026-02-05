@@ -36,7 +36,7 @@ const (
 
 // ControllerOptions contains options for the DRATopologyController
 type ControllerOptions struct {
-	// JSONFilePath is the file path to a JSON file containing the topology level data
+	// JSONFilePath is the absolute file path to a JSON file containing the topology level data
 	JSONFilePath string
 }
 
@@ -134,7 +134,7 @@ func (c *Controller) createTopologyDeviceClasses(ctx context.Context) {
 			path: c.options.JSONFilePath,
 		}
 	default:
-		c.logger.Error(nil, "no topology source specified. You must provide a well-formed JSON to --topology-config-json.")
+		c.logger.Error(nil, "no topology source specified. You must provide the absolute path to a well-formed JSON to --topology-config-json.")
 		return
 	}
 

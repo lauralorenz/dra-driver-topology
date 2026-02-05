@@ -17,12 +17,40 @@ package dratopology
 
 import (
 	"testing"
+	"testing/fstest"
 
 	"k8s.io/apimachinery/pkg/util/diff"
 )
 
 func TestJSONHierarchyPlugin_ReadHierarchy(t *testing.T) {
-	plugin := &JSONHierarchyPlugin{path: "testdata/hierarchy_json.json"}
+	json :=
+		`{
+			"version": 1,
+			"root": {
+				"name": "block",
+				"label": "topo.example.com/block",
+				"children": [
+					{
+						"name": "subblock",
+						"label": "topo.example.com/subblock",
+						"children": [
+							{
+								"name": "host",
+								"label": "topo.example.com/host"
+							}
+						]
+					}
+				]
+			}
+		}`
+
+	fsys := fstest.MapFS{
+		"testdata/hierarchy_json.json": {
+			Data: []byte(json),
+		},
+	}
+
+	plugin := &JSONHierarchyPlugin{path: "testdata/hierarchy_json.json", fs: fsys}
 
 	expectedLevels := []FlatLevel{
 		{Name: "block", Label: "topo.example.com/block"},

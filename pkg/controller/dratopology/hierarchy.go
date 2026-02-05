@@ -19,6 +19,7 @@ package dratopology
 import (
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"os"
 
 	"k8s.io/apimachinery/pkg/labels"
@@ -71,22 +72,24 @@ func NewBasicHierarchyReader(plugin HierarchyPlugin) *FlatHierarchy {
 // JSON Hierarchy Plugin can read a topo hierarchy from a well-formed JSON file.
 type JSONHierarchyPlugin struct {
 	path string
+	fs   fs.FS
 }
 
 func (h *JSONHierarchyPlugin) ReadHierarchy() ([]FlatLevel, []labels.Selector, int, error) {
 	if h.path == "" {
 		return nil, nil, 0, fmt.Errorf("No file provided")
 	}
+	if h.fs == nil {
+		h.fs = os.DirFS("/")
+	}
 
-	file, err := os.Open(h.path)
+	fdata, err := fs.ReadFile(h.fs, h.path)
 	if err != nil {
 		return nil, nil, 0, fmt.Errorf("failed to open JSON file: %w", err)
 	}
-	defer file.Close()
 
 	var data Data
-	decoder := json.NewDecoder(file)
-	if err := decoder.Decode(&data); err != nil {
+	if err = json.Unmarshal(fdata, &data); err != nil {
 		return nil, nil, 0, fmt.Errorf("failed to decode JSON: %w", err)
 	}
 

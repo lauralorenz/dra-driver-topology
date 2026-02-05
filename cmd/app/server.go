@@ -67,7 +67,7 @@ func (o *Options) Flags() cliflag.NamedFlagSets {
 	logsapi.AddFlags(o.Logs, nfs.FlagSet("logs"))
 
 	cfs := nfs.FlagSet("Controller")
-	cfs.StringVar(&o.JSONFile, "topology-config-json", o.JSONFile, "Path to a JSON file containing the topology hierarchy Kubernetes labels.")
+	cfs.StringVar(&o.JSONFile, "topology-config-json", o.JSONFile, "Absolute path to a JSON file containing the topology hierarchy Kubernetes labels.")
 
 	overrideFlags := clientcmd.RecommendedConfigOverrideFlags("kube-")
 	clientcmd.BindOverrideFlags(&o.ConfigOverrides, nfs.FlagSet("kubeconfig"), overrideFlags)
