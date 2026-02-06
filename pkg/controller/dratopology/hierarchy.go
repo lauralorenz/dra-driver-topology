@@ -63,7 +63,7 @@ type FlatLevel struct {
 }
 
 // NewBasicHierarchyReader creates a new BasicHierarchyReader with the configured hierarchy plugin.
-func NewBasicHierarchyReader(plugin HierarchyPlugin) *FlatHierarchy {
+func NewFlatHierarchyReader(plugin HierarchyPlugin) *FlatHierarchy {
 	return &FlatHierarchy{
 		reader: plugin,
 	}
