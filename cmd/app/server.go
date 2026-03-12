@@ -84,14 +84,13 @@ func NewControllerCommand() *cobra.Command {
 		Use:     dratopologyControllerName,
 		Long:    `The DRA Topology Controller is a controller that manages ResourceSlices that represent Kubernetes node topology.`,
 		Version: dratopology.ControllerVersion,
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			// Validate early we have at least one and only one topology source
-			if !cmd.Flags().Changed("topology-config-json") {
-				return fmt.Errorf("at least one of --topology-config-json must be specified")
-			}
-			return nil
-		},
 		RunE: func(cmd *cobra.Command, args []string) error {
+
+			// Validate early we have at least one and only one topology source
+			// Today we have only implemented JSON so only check for that one
+			if opts.TopologyConfigJSONPath == "" {
+				return fmt.Errorf("you must provide --topology-config-json")
+			}
 
 			// Activate logging as soon as possible, after that
 			// show flags with the final logging configuration.
