@@ -76,7 +76,6 @@ func TestRun_NotEnoughConfig(t *testing.T) {
 			cmd := NewControllerCommand()
 			cmd.SetArgs(tc.args)
 			err := cmd.ExecuteContext(ctx)
-			cmd.Execute()
 			if tc.expectedErr {
 				assert.Error(t, err)
 			} else {
