@@ -40,9 +40,9 @@ const (
 
 // Options contains the options for running the controller.
 type Options struct {
-	Logs            *logs.Options
-	ConfigOverrides clientcmd.ConfigOverrides
-	JSONFile        string
+	Logs                   *logs.Options
+	ConfigOverrides        clientcmd.ConfigOverrides
+	TopologyConfigJSONPath string
 }
 
 // ControllerContext defines the context object for the controller.
@@ -67,7 +67,7 @@ func (o *Options) Flags() cliflag.NamedFlagSets {
 	logsapi.AddFlags(o.Logs, nfs.FlagSet("logs"))
 
 	cfs := nfs.FlagSet("Controller")
-	cfs.StringVar(&o.JSONFile, "topology-config-json", o.JSONFile, "Absolute path to a JSON file containing the topology hierarchy Kubernetes labels.")
+	cfs.StringVar(&o.TopologyConfigJSONPath, "topology-config-json", o.TopologyConfigJSONPath, "Absolute path to a JSON file containing the topology hierarchy Kubernetes labels.")
 
 	overrideFlags := clientcmd.RecommendedConfigOverrideFlags("kube-")
 	clientcmd.BindOverrideFlags(&o.ConfigOverrides, nfs.FlagSet("kubeconfig"), overrideFlags)
@@ -134,8 +134,8 @@ func Run(ctx context.Context, opts *Options) error {
 	logger.Info(fmt.Sprintf("Starting %s, version %s", dratopologyControllerName, dratopology.ControllerVersion))
 
 	copts := dratopology.ControllerOptions{}
-	if opts.JSONFile != "" {
-		copts.JSONFilePath = opts.JSONFile
+	if opts.TopologyConfigJSONPath != "" {
+		copts.JSONFilePath = opts.TopologyConfigJSONPath
 	}
 
 	// Get control plane config

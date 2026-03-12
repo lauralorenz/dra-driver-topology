@@ -37,8 +37,8 @@ func TestNewControllerCommand(t *testing.T) {
 // TestRun_InvalidClusterConfig ensures that the Run function returns an error when an invalid config is provided.
 func TestRun_InvalidClusterConfig(t *testing.T) {
 	opts := &Options{
-		ConfigOverrides: clientcmd.ConfigOverrides{CurrentContext: "non-existent-context"},
-		JSONFile:        "wont-get-here",
+		ConfigOverrides:        clientcmd.ConfigOverrides{CurrentContext: "non-existent-context"},
+		TopologyConfigJSONPath: "wont-get-here",
 	}
 	err := Run(context.Background(), opts)
 	assert.Error(t, err)
