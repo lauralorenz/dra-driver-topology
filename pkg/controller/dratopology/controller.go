@@ -71,7 +71,12 @@ func (c *Controller) Run(parent context.Context, workers int) {
 	c.logger.Info("Starting dratopology controller")
 
 	// Create device classes for each known topology type first
-	c.createTopologyDeviceClasses(ctx)
+	if err := c.createTopologyDeviceClasses(ctx); err != nil {
+		c.logger.Error(err, "failed to create device classes for topology. Shutting down gracefully...")
+		stop()
+		c.ShutDown()
+		return
+	}
 
 	// then start workers to process new node events to add devices as they are seen
 	for range workers {
@@ -110,6 +115,7 @@ func (c *Controller) processNextWorkItem(ctx context.Context) bool {
 }
 
 // syncHandler is invoked for each work item.
+// If an error is returned from this function, the item will be requeued.
 func (c *Controller) syncHandler(ctx context.Context, key string) error {
 	c.logger.V(4).Info("Processing key", "key", key)
 	// In a real controller, this is where you would fetch the object
@@ -123,7 +129,7 @@ func (c *Controller) ShutDown() {
 	c.queue.ShutDown()
 }
 
-func (c *Controller) createTopologyDeviceClasses(ctx context.Context) {
+func (c *Controller) createTopologyDeviceClasses(ctx context.Context) error {
 	c.logger.Info(fmt.Sprintf("creating topology device classes with options %v", c.options))
 
 	var plugin HierarchyPlugin
@@ -134,14 +140,12 @@ func (c *Controller) createTopologyDeviceClasses(ctx context.Context) {
 			path: c.options.JSONFilePath,
 		}
 	default:
-		c.logger.Error(nil, "no topology source specified. You must provide the absolute path to a well-formed JSON to --topology-config-json.")
-		return
+		return fmt.Errorf("no topology source specified. You must provide the absolute path to a well-formed JSON to --topology-config-json.")
 	}
 
 	levels, selectors, count, err := plugin.ReadHierarchy()
 	if err != nil {
-		c.logger.Error(err, "failed to read hierarchy")
-		return
+		return fmt.Errorf("failed to read hierarchy: %w", err)
 	}
 
 	hierarchy := &FlatHierarchy{
@@ -153,4 +157,5 @@ func (c *Controller) createTopologyDeviceClasses(ctx context.Context) {
 	if err := SyncDeviceClasses(ctx, c.kubeClient, hierarchy); err != nil {
 		c.logger.Error(err, "failed to sync device classes")
 	}
+	return nil
 }

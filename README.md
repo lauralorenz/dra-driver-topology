@@ -5,11 +5,12 @@ This repository contains a reference resource driver implemented as a Kubernetes
 # Development
 
 You can run the controller locally with `make run`. You must specify
-`--apiserver-endpoint` or `--kubeconfig` to an `ARGS` environment variable to
-give it access to a control plane. For example:
+`--kube-server` or `--kube-context` to an `ARGS` environment variable to give it
+access to a control plane, and a topology config source (today only JSON is
+supported). For example:
 
 ```
-make run ARGS="--apiserver-endpoint=https://127.0.0.1:46777 --v 5"
+make run ARGS="--kube-server=https://127.0.0.1:46777 --json-config-path=/abs/path/to/json.json --v 5"
 ```
 
 ## Community, discussion, contribution, and support

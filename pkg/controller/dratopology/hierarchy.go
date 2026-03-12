@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
@@ -83,9 +84,15 @@ func (h *JSONHierarchyPlugin) ReadHierarchy() ([]FlatLevel, []labels.Selector, i
 		h.fs = os.DirFS("/")
 	}
 
-	fdata, err := fs.ReadFile(h.fs, h.path)
+	path := h.path
+	// remove leading slash as it will be added by the fsys
+	if strings.HasPrefix(h.path, "/") {
+		path = h.path[1:]
+	}
+
+	fdata, err := fs.ReadFile(h.fs, path)
 	if err != nil {
-		return nil, nil, 0, fmt.Errorf("failed to open JSON file: %w", err)
+		return nil, nil, 0, fmt.Errorf("failed to open file. path: %s, fs: %s, error: %w", path, h.fs, err)
 	}
 
 	var data Data

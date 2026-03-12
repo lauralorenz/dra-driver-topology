@@ -17,6 +17,7 @@ limitations under the License.
 package dratopology
 
 import (
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -71,7 +72,12 @@ func TestRun(t *testing.T) {
 
 	fakeKubeClient := fake.NewClientset()
 
-	copts := ControllerOptions{}
+	p := "testdata/hierarchy_json.json"
+	absPath, err := filepath.Abs(p)
+	if err != nil {
+		t.Fatalf("Failed to get absolute path for %s: %v", p, err)
+	}
+	copts := ControllerOptions{JSONFilePath: absPath}
 
 	c, err := NewController(logger, fakeKubeClient, copts)
 	assert.NoError(t, err, "creating dratopology controller")
