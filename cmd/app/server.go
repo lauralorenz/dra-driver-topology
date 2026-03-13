@@ -91,12 +91,6 @@ func NewControllerCommand() *cobra.Command {
 			if opts.TopologyConfigJSONPath == "" {
 				return fmt.Errorf("you must provide --topology-config-json")
 			}
-
-			// Activate logging as soon as possible, after that
-			// show flags with the final logging configuration.
-			if err := logsapi.ValidateAndApply(opts.Logs, nil); err != nil {
-				return err
-			}
 			cliflag.PrintFlags(cmd.Flags())
 
 			ctx := cmd.Context()
@@ -163,13 +157,16 @@ func Run(ctx context.Context, opts *Options) error {
 	}
 
 	// Run directly.
-	run(ctx, *controller, opts)
+	err = run(ctx, *controller, opts)
+	if err != nil {
+		return err
+	}
 	return nil
 
 	// TODO: Run with leader election
 }
 
-func run(ctx context.Context, controller dratopology.Controller, opts *Options) {
+func run(ctx context.Context, controller dratopology.Controller, opts *Options) error {
 	// run the controller
-	controller.Run(ctx, 1)
+	return controller.Run(ctx, 1)
 }

@@ -64,7 +64,7 @@ func NewController(logger klog.Logger, kubeClient clientset.Interface, options C
 }
 
 // Run starts the dratopology controller.
-func (c *Controller) Run(parent context.Context, workers int) {
+func (c *Controller) Run(parent context.Context, workers int) error {
 
 	ctx, stop := signal.NotifyContext(parent, syscall.SIGINT, syscall.SIGTERM)
 
@@ -75,7 +75,7 @@ func (c *Controller) Run(parent context.Context, workers int) {
 		c.logger.Error(err, "failed to create device classes for topology. Shutting down gracefully...")
 		stop()
 		c.ShutDown()
-		return
+		return err
 	}
 
 	// then start workers to process new node events to add devices as they are seen
@@ -88,6 +88,7 @@ func (c *Controller) Run(parent context.Context, workers int) {
 
 	c.logger.Info("Shutting down gracefully...")
 	c.ShutDown()
+	return nil
 }
 
 func (c *Controller) runWorker(ctx context.Context) {
@@ -156,6 +157,7 @@ func (c *Controller) createTopologyDeviceClasses(ctx context.Context) error {
 
 	if err := SyncDeviceClasses(ctx, c.kubeClient, hierarchy); err != nil {
 		c.logger.Error(err, "failed to sync device classes")
+		return err
 	}
 	return nil
 }

@@ -18,10 +18,12 @@ package app
 
 import (
 	"context"
+	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog/v2/ktesting"
 )
@@ -46,25 +48,29 @@ func TestRun_InvalidClusterConfig(t *testing.T) {
 }
 
 func TestRun_NotEnoughConfig(t *testing.T) {
+	p := "../../pkg/controller/dratopology/testdata/hierarchy_json.json"
+	absPath, err := filepath.Abs(p)
+	if err != nil {
+		t.Fatalf("Failed to get absolute path for %s: %v", p, err)
+	}
+
 	testcases := []struct {
-		name        string
-		args        []string
-		expectedErr bool
+		name                   string
+		args                   []string
+		expectedErr            bool
+		expectedErrExactString string
 	}{
 		{
-			name:        "no error",
-			args:        []string{"--kube-server", "https://localhost:8080", "--topology-config-json", "testdata/hierarchy_json.json"},
-			expectedErr: false,
+			name:                   "needs cluster",
+			args:                   []string{"--topology-config-json", absPath},
+			expectedErr:            true,
+			expectedErrExactString: "could not build cluster config from provided options: invalid configuration: no configuration has been provided, try setting KUBERNETES_MASTER environment variable",
 		},
 		{
-			name:        "needs cluster",
-			args:        []string{"--topology-config-json", "randompath"},
-			expectedErr: true,
-		},
-		{
-			name:        "needs --topology-config-json",
-			args:        []string{"--kube-server", "randomurl"},
-			expectedErr: true,
+			name:                   "needs --topology-config-json",
+			args:                   []string{"--kube-server", "randomurl"},
+			expectedErr:            true,
+			expectedErrExactString: "you must provide --topology-config-json",
 		},
 	}
 
@@ -76,10 +82,13 @@ func TestRun_NotEnoughConfig(t *testing.T) {
 			cmd := NewControllerCommand()
 			cmd.SetArgs(tc.args)
 			err := cmd.ExecuteContext(ctx)
-			if tc.expectedErr {
-				assert.Error(t, err)
-			} else {
+			if !tc.expectedErr {
 				assert.NoError(t, err)
+			} else {
+				assert.Error(t, err)
+				if d := diff.Diff(err.Error(), tc.expectedErrExactString); d != "" {
+					t.Errorf("Unexpected error: %v", d)
+				}
 			}
 		})
 	}
