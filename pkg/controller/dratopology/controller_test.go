@@ -28,7 +28,7 @@ import (
 )
 
 func TestController(t *testing.T) {
-	tCtx := ktesting.Init(t)
+	_, tCtx := ktesting.NewTestContext(t)
 	tCtx = ktesting.WithCancel(tCtx)
 	logger := klog.FromContext(tCtx)
 
@@ -66,8 +66,7 @@ func TestController(t *testing.T) {
 }
 
 func TestRun(t *testing.T) {
-	tCtx := ktesting.Init(t)
-	tCtx = ktesting.WithCancel(tCtx)
+	_, tCtx := ktesting.NewTestContext(t)
 	logger := klog.FromContext(tCtx)
 
 	fakeKubeClient := fake.NewClientset()
